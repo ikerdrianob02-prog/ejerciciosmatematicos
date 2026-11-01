@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TuProfe20 Lab - Fórmula Cuadrática Paso a Paso</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap');
+        
+        body { margin: 0; padding: 0; overflow: hidden; width: 100vw; height: 100dvh; user-select: none; }
+        .font-fun { font-family: 'Nunito', sans-serif; }
+        
+        @keyframes floatUp { 
+            0% { transform: translateY(105vh) rotate(0deg); } 
+            100% { transform: translateY(-105vh) rotate(360deg); } 
+        }
+        @keyframes slideInRight { 
+            0% { opacity: 0; transform: translateX(15px); } 
+            100% { opacity: 1; transform: translateX(0); } 
+        }
+        @keyframes confettiExplosion { 
+            0% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 1; } 
+            80% { opacity: 1; } 
+            100% { transform: translate(var(--tx), var(--ty)) scale(0) rotate(var(--rot)); opacity: 0; } 
+        }
+        @keyframes jellyPop {
+            0% { transform: scale3d(.3, .3, .3); opacity: 0; }
+            20% { transform: scale3d(1.18, 1.18, 1.18); }
+            40% { transform: scale3d(.92, .92, .92); }
+            60% { transform: scale3d(1.06, 1.06, 1.06); opacity: 1; }
+            80% { transform: scale3d(.97, .97, .97); }
+            100% { transform: scale3d(1, 1, 1); opacity: 1; }
+        }
+        @keyframes robotFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+        @keyframes robotThinkTilt { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(6deg) translateY(-3px); } }
+        @keyframes robotJump { 0%, 100% { transform: translateY(0); } 30% { transform: translateY(-15px); } }
+        @keyframes robotTalkArmL { 0%, 100% { transform: rotate(45deg); } 50% { transform: rotate(95deg); } }
+        @keyframes robotTalkArmR { 0%, 100% { transform: rotate(-45deg); } 50% { transform: rotate(-95deg); } }
+
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .animate-floatUp { animation: floatUp linear infinite; }
+        .animate-slideInRight { animation: slideInRight 0.3s ease-out forwards; }
+        .animate-confettiExplosion { animation: confettiExplosion 1.8s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+        .animate-jellyPop { animation: jellyPop 0.55s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .animate-robotFloat { animation: robotFloat 3s ease-in-out infinite; }
+        .animate-robotThinkTilt { animation: robotThinkTilt 2s ease-in-out infinite; }
+        .animate-robotJump { animation: robotJump 1s cubic-bezier(0.28, 0.84, 0.42, 1) infinite; }
+        .animate-robotTalkArmL { animation: robotTalkArmL 0.6s ease-in-out infinite; }
+        .animate-robotTalkArmR { animation: robotTalkArmR 0.6s ease-in-out infinite 0.1s; }
+
+        .katex { font-weight: 900 !important; }
+        .katex-display { margin: 0 !important; padding: 0 !important; }
+        
+        .math-card .katex { font-size: clamp(0.9rem, 1.8vw, 1.25rem) !important; color: #1e293b !important; }
+        .math-enunciado .katex { font-size: clamp(0.9rem, 1.8vw, 1.4rem) !important; color: #ffffff !important; }
+        .math-current .katex { font-size: clamp(1rem, 2.5vw, 2.2rem) !important; color: #0f172a !important; }
+        .math-history .katex { font-size: clamp(0.9rem, 2vw, 1.6rem) !important; color: #475569 !important; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, memo } = React;
+
+        const Icon = ({ paths, className = "", size = 24, fill = "none", strokeWidth = "2.5" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className} dangerouslySetInnerHTML={{__html: paths}} />
+        );
+
+        const VolumeX = (p) => <Icon {...p} paths='<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>' />;
+        const Volume2 = (p) => <Icon {...p} paths='<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>' />;
+        const Rocket = (p) => <Icon {...p} paths='<path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>' />;
+        const Sparkles = (p) => <Icon {...p} paths='<path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M3 5h4"/><path d="M19 3v4"/><path d="M17 5h4"/>' />;
+        const Home = (p) => <Icon {...p} paths='<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>' />;
+        const ChevronLeft = (p) => <Icon {...p} paths='<polyline points="15 18 9 12 15 6"/>' />;
+        const ChevronRight = (p) => <Icon {...p} paths='<polyline points="9 18 15 12 9 6"/>' />;
+
+        const AudioController = {
+            ctx: null, muted: false,
+            init: function() {
+                if (this.ctx) return;
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) this.ctx = new AudioContext();
+            },
+            play: function(type) {
+                if (this.muted || !this.ctx) return;
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                const now = this.ctx.currentTime;
+                
+                if (type === 'pop') {
+                    osc.type = 'sine'; osc.frequency.setValueAtTime(500, now); osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
+                    gain.gain.setValueAtTime(0.25, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now); osc.stop(now + 0.1);
+                } else if (type === 'pop-reverse') {
+                    osc.type = 'triangle'; osc.frequency.setValueAtTime(650, now); osc.frequency.exponentialRampToValueAtTime(280, now + 0.12);
+                    gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+                    osc.start(now); osc.stop(now + 0.12);
+                } else if (type === 'success') {
+                    osc.disconnect();
+                    const notes = [523.25, 659.25, 783.99, 1046.50];
+                    notes.forEach((freq, i) => {
+                        const o = this.ctx.createOscillator(); const g = this.ctx.createGain();
+                        o.type = 'triangle'; o.frequency.value = freq;
+                        o.connect(g); g.connect(this.ctx.destination);
+                        const startTime = now + (i * 0.07);
+                        g.gain.setValueAtTime(0, startTime); g.gain.linearRampToValueAtTime(0.2, startTime + 0.04); g.gain.linearRampToValueAtTime(0, startTime + 0.35);
+                        o.start(startTime); o.stop(startTime + 0.35);
+                    });
+                } else if (type === 'swoosh') {
+                    osc.type = 'sine'; osc.frequency.setValueAtTime(280, now); osc.frequency.exponentialRampToValueAtTime(70, now + 0.18);
+                    gain.gain.setValueAtTime(0.2, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.18);
+                    osc.start(now); osc.stop(now + 0.18);
+                }
+            },
+            toggleMute: function() { this.muted = !this.muted; return this.muted; }
+        };
+
+        const MathDisplay = memo(({ latex, className = "", inline = false }) => {
+            const containerRef = useRef(null);
+
+            useEffect(() => {
+                if (containerRef.current && window.katex) {
+                    try {
+                        window.katex.render(latex, containerRef.current, {
+                            displayMode: !inline, throwOnError: false, strict: false, trust: true
+                        });
+                    } catch (e) {
+                        containerRef.current.innerText = latex;
+                    }
+                }
+            }, [latex, inline]);
+
+            return inline ? (
+                <span ref={containerRef} className={`inline-block align-middle ${className}`} />
+            ) : (
+                <div className={`relative w-full flex justify-center ${className}`}>
+                    <div ref={containerRef} className="w-full text-center" />
+                </div>
+            );
+        });
+
+        // Componente Gráfico Interactivo para Representación Geométrica de Completar el Cuadrado
+        const CompleteSquareGraphic = memo(({ stepIndex }) => {
+            if (stepIndex < 3 || stepIndex > 6) return null;
+
+            return (
+                <div className="relative w-full flex flex-col items-center justify-center p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 my-2">
+                    <span className="text-xs sm:text-sm font-bold text-indigo-900 mb-2">
+                        Visualización Geométrica: Completando el Cuadrado
+                    </span>
+                    <div className="flex items-center justify-center gap-2 flex-wrap">
+                        {/* Cuadrado de área x^2 */}
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-blue-500 rounded-lg flex items-center justify-center text-white font-black shadow-md">
+                            x²
+                        </div>
+                        <span className="text-slate-700 font-bold text-lg">+</span>
+                        {/* Dos rectángulos de área (b/2a)x */}
+                        <div className="flex flex-col gap-1">
+                            <div className="w-16 h-7 sm:w-20 sm:h-9 bg-teal-500 rounded flex items-center justify-center text-white text-xs font-black shadow-sm">
+                                (b/2a)x
+                            </div>
+                            <div className="w-16 h-7 sm:w-20 sm:h-9 bg-teal-500 rounded flex items-center justify-center text-white text-xs font-black shadow-sm">
+                                (b/2a)x
+                            </div>
+                        </div>
+                        {stepIndex >= 4 && (
+                            <>
+                                <span className="text-slate-700 font-bold text-lg">+</span>
+                                {/* Cuadrado que completa el área */}
+                                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-amber-400 border-2 border-dashed border-amber-600 rounded flex items-center justify-center text-slate-900 text-[10px] sm:text-xs font-black animate-jellyPop shadow-md">
+                                    b²/4a²
+                                </div>
+                            </>
+                        )}
+                        <span className="text-slate-700 font-bold text-lg">=</span>
+                        {/* Resultado Trinomial/Binomio al cuadrado */}
+                        <div className="w-24 h-24 sm:w-28 sm:h-28 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center text-white font-black shadow-lg p-1 text-center text-xs sm:text-sm">
+                            {stepIndex >= 5 ? '(x + b/2a)²' : 'Cuadrado Completo'}
+                        </div>
+                    </div>
+                </div>
+            );
+        });
+
+        const EXERCISES = [
+            {
+                id: 1, title: "Paso 1", subtitle: "Forma Canónica",
+                cardGradient: "from-blue-500/30 to-cyan-600/30 border-blue-400", badgeColor: "bg-blue-500",
+                enunciado: () => <span>Ecuación Cuadrática General en su forma estándar o canónica, donde <MathDisplay inline latex="a \neq 0" />.</span>,
+                steps: [
+                    { 
+                        latex: String.raw`ax^2 + bx + c = 0`, 
+                        propertyText: "Ecuación Cuadrática Completa", 
+                        robotSpeech: "¡Bienvenido! Iniciamos con la forma general de una ecuación cuadrática de segundo grado. Nuestro objetivo es despejar 'x' paso a paso." 
+                    }
+                ]
+            },
+            {
+                id: 2, title: "Paso 2", subtitle: "Aislamiento del Término Independiente",
+                cardGradient: "from-indigo-500/30 to-blue-600/30 border-indigo-400", badgeColor: "bg-indigo-500",
+                enunciado: () => <span>Trasponer el término independiente <MathDisplay inline latex="c" /> al lado derecho de la ecuación.</span>,
+                steps: [
+                    { 
+                        latex: String.raw`ax^2 + bx = -c`, 
+                        propertyText: "Transposición de Términos", 
+                        robotSpeech: "Restamos 'c' a ambos lados de la igualdad. Así dejamos únicamente los términos con la variable 'x' en el lado izquierdo." 
+                    }
+                ]
+            },
+            {
+                id: 3, title: "Paso 3", subtitle: "Normalización del Coeficiente Principal",
+                cardGradient: "from-purple-500/30 to-indigo-600/30 border-purple-400", badgeColor: "bg-purple-500",
+                enunciado: () => <span>Dividir toda la ecuación entre el coeficiente principal <MathDisplay inline latex="a" /> (dado que <MathDisplay inline latex="a \neq 0" />).</span>,
+                steps: [
+                    { 
+                        latex: String.raw`x^2 + \frac{b}{a}x = -\frac{c}{a}`, 
+                        propertyText: "División por 'a'", 
+                        robotSpeech: "Dividimos cada término entre 'a' para que el coeficiente de x² pase a ser 1. Esto facilitará completar el trinomio cuadrado perfecto.",
+                        graphic: <CompleteSquareGraphic stepIndex={3} />
+                    }
+                ]
+            },
+            {
+                id: 4, title: "Paso 4", subtitle: "Completando el Cuadrado",
+                cardGradient: "from-fuchsia-500/30 to-purple-600/30 border-fuchsia-400", badgeColor: "bg-fuchsia-500",
+                enunciado: () => <span>Sumar el cuadrado de la mitad del coeficiente lineal, es decir <MathDisplay inline latex="\frac{b^2}{4a^2}" />, a ambos lados.</span>,
+                steps: [
+                    { 
+                        latex: String.raw`x^2 + \frac{b}{a}x + \frac{b^2}{4a^2} = -\frac{c}{a} + \frac{b^2}{4a^2}`, 
+                        propertyText: "Sumar (b / 2a)² a ambos lados", 
+                        robotSpeech: "Para formar un Trinomio Cuadrado Perfecto en la izquierda, sumamos (b / 2a)² = b²/4a² en ambos miembros para mantener la igualdad.",
+                        graphic: <CompleteSquareGraphic stepIndex={4} />
+                    }
+                ]
+            },
+            {
+                id: 5, title: "Paso 5", subtitle: "Factorización como Binomio al Cuadrado",
+                cardGradient: "from-rose-500/30 to-pink-600/30 border-rose-400", badgeColor: "bg-rose-500",
+                enunciado: () => <span>Factorizar el trinomio del lado izquierdo como el cuadrado de un binomio <MathDisplay inline latex="\left(x + \frac{b}{2a}\right)^2" />.</span>,
+                steps: [
+                    { 
+                        latex: String.raw`\left(x + \frac{b}{2a}\right)^2 = -\frac{c}{a} + \frac{b^2}{4a^2}`, 
+                        propertyText: "Factorización TCP", 
+                        robotSpeech: "Transformamos el trinomio x² + (b/a)x + b²/4a² en su binomio al cuadrado equivalente: (x + b/2a)². ¡Genial!",
+                        graphic: <CompleteSquareGraphic stepIndex={5} />
+                    }
+                ]
+            },
+            {
+                id: 6, title: "Paso 6", subtitle: "Simplificación del Segundo Miembro",
+                cardGradient: "from-amber-500/30 to-orange-600/30 border-amber-400", badgeColor: "bg-amber-500",
+                enunciado: () => <span>Combinar las fracciones del lado derecho utilizando como común denominador <MathDisplay inline latex="4a^2" />.</span>,
+                steps: [
+                    { 
+                        latex: String.raw`\left(x + \frac{b}{2a}\right)^2 = \frac{b^2 - 4ac}{4a^2}`, 
+                        propertyText: "Suma de Fracciones", 
+                        robotSpeech: "Buscamos un denominador común (4a²) en el lado derecho: -c/a se convierte en -4ac/4a². Al sumar con b²/4a² obtenemos (b² - 4ac)/4a²." 
+                    }
+                ]
+            },
+            {
+                id: 7, title: "Paso 7", subtitle: "Extracción de la Raíz Cuadrada",
+                cardGradient: "from-lime-500/30 to-emerald-600/30 border-lime-400", badgeColor: "bg-lime-500",
+                enunciado: () => <span>Aplicar la raíz cuadrada a ambos miembros considerando ambos signos <MathDisplay inline latex="\pm" />.</span>,
+                steps: [
+                    { 
+                        latex: String.raw`\pm \sqrt{\left(x + \frac{b}{2a}\right)^2} = \pm \sqrt{\frac{b^2 - 4ac}{4a^2}}`, 
+                        propertyText: "Raíz Cuadrada a ambos lados", 
+                        robotSpeech: "Para eliminar el exponente cuadrado del lado izquierdo, extraemos la raíz cuadrada a ambos lados, añadiendo los signos ±." 
+                    }
+                ]
+            },
+            {
+                id: 8, title: "Paso 8", subtitle: "Simplificación del Radical",
+                cardGradient: "from-emerald-500/30 to-teal-600/30 border-emerald-400", badgeColor: "bg-emerald-500",
+                enunciado: () => <span>Simplificar los radicales en ambos lados de la ecuación.</span>,
+                steps: [
+                    { 
+                        latex: String.raw`x + \frac{b}{2a} = \frac{\pm \sqrt{b^2 - 4ac}}{2a}`, 
+                        propertyText: "Simplificación Radical", 
+                        robotSpeech: "La raíz destruye al cuadrado en el lado izquierdo. En el derecho, extraemos la raíz cuadrada del denominador: √(4a²) = 2a." 
+                    }
+                ]
+            },
+            {
+                id: 9, title: "Paso 9", subtitle: "Despeje de la Incógnita 'x'",
+                cardGradient: "from-teal-500/30 to-cyan-600/30 border-teal-400", badgeColor: "bg-teal-500",
+                enunciado: () => <span>Pasar el término <MathDisplay inline latex="\frac{b}{2a}" /> restando al lado derecho.</span>,
+                steps: [
+                    { 
+                        latex: String.raw`x = \frac{\pm \sqrt{b^2 - 4ac}}{2a} - \frac{b}{2a}`, 
+                        propertyText: "Despejando x", 
+                        robotSpeech: "Pasamos b/2a restando al otro lado de la igualdad para dejar la 'x' totalmente despejada." 
+                    }
+                ]
+            },
+            {
+                id: 10, title: "Paso 10", subtitle: "Fórmula General Resultante",
+                cardGradient: "from-yellow-400/40 to-amber-600/40 border-yellow-300", badgeColor: "bg-amber-500",
+                enunciado: () => <span>Combinar los términos sobre el denominador común <MathDisplay inline latex="2a" /> para obtener la Fórmula Cuadrática General.</span>,
+                steps: [
+                    { 
+                        latex: String.raw`x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}`, 
+                        propertyText: "Fórmula General Demostrada", 
+                        robotSpeech: "¡Eureka! Unimos ambas fracciones que comparten el mismo denominador 2a. ¡Hemos deducido con éxito la famosa Fórmula Cuadrática!" 
+                    }
+                ]
+            }
+        ];
+
+        // Recopilatorio interactivo global paso a paso de los 10 ejercicios
+        const FULL_DEMONSTRATION = {
+            id: 0, title: "Deducción Completa", subtitle: "10 Pasos Continuos",
+            enunciado: () => <span>Demostración completa y progresiva de la fórmula cuadrática general por el método de completar el cuadrado.</span>,
+            steps: EXERCISES.map(e => ({
+                latex: e.steps[0].latex,
+                propertyText: `${e.title}: ${e.subtitle}`,
+                robotSpeech: e.steps[0].robotSpeech,
+                graphic: e.steps[0].graphic
+            }))
+        };
+
+        const FloatingBackground = memo(() => {
+            const symbols = ['ax²', 'bx', 'c', '√', '±', '=', 'x', 'a', 'b', '4ac', '2a'];
+            const elements = Array.from({ length: 40 }).map((_, i) => ({
+                id: i, symbol: symbols[Math.floor(Math.random() * symbols.length)], left: `${Math.random() * 100}%`,
+                animationDuration: `${10 + Math.random() * 15}s`, animationDelay: `-${Math.random() * 20}s`,
+                fontSize: `${1 + Math.random() * 2.5}rem`, opacity: 0.1 + Math.random() * 0.15
+            }));
+            return (
+                <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+                    {elements.map((el) => (
+                        <div key={el.id} className="absolute text-white font-black animate-floatUp select-none drop-shadow-lg" style={{ left: el.left, bottom: '-15%', fontSize: el.fontSize, opacity: el.opacity, animationDuration: el.animationDuration, animationDelay: el.animationDelay }}>
+                            {el.symbol}
+                        </div>
+                    ))}
+                </div>
+            );
+        });
+
+        const Confetti = memo(() => {
+            const colors = ['#fde047', '#60a5fa', '#f472b6', '#34d399', '#a78bfa', '#ff5722'];
+            const pieces = Array.from({ length: 120 }).map((_, i) => ({
+                id: i, left: `${50 + (Math.random() * 20 - 10)}%`, color: colors[Math.floor(Math.random() * colors.length)],
+                tx: `${(Math.random() - 0.5) * 800}px`, ty: `${(Math.random() - 1) * 800}px`, rot: `${Math.random() * 720}deg`, delay: `${Math.random() * 0.2}s`
+            }));
+            return (
+                <div className="absolute inset-0 pointer-events-none z-50 flex items-center justify-center overflow-hidden">
+                    {pieces.map((p) => (
+                        <div key={p.id} className="absolute w-4 h-4 sm:w-5 sm:h-5 rounded-full animate-confettiExplosion shadow-sm" style={{ backgroundColor: p.color, '--tx': p.tx, '--ty': p.ty, '--rot': p.rot, animationDelay: p.delay, left: p.left, top: '50%' }} />
+                    ))}
+                </div>
+            );
+        });
+
+        const RobotAssistant = ({ step, maxSteps }) => {
+            const isFinalStep = step >= maxSteps;
+            const isThinking = step === maxSteps - 1 && maxSteps > 0;
+
+            const getContainerAnim = () => { if (isFinalStep) return 'animate-robotJump'; if (isThinking) return 'animate-robotThinkTilt'; return 'animate-robotFloat'; };
+            const getArmLAnim = () => { if (isFinalStep) return 'rotate-[150deg] animate-pulse'; if (step > 0) return 'animate-robotTalkArmL'; return 'rotate-45'; };
+            const getArmRAnim = () => { if (isFinalStep) return '-rotate-[150deg] animate-pulse'; if (step > 0) return 'animate-robotTalkArmR'; return '-rotate-45'; };
+            
+            const getEyes = () => {
+                if (isFinalStep) return <div className="w-full flex justify-between px-1.5"><div className="w-3.5 h-2 bg-emerald-400 rounded-t-full mt-1"></div><div className="w-3.5 h-2 bg-emerald-400 rounded-t-full mt-1"></div></div>;
+                if (step === 0) return <div className="w-full flex justify-between px-2"><div className="w-2.5 h-2.5 bg-cyan-400 rounded-full animate-pulse"></div><div className="w-2.5 h-2.5 bg-cyan-400 rounded-full animate-pulse"></div></div>;
+                return <div className="w-full flex justify-between px-1.5"><div className="w-3 h-3 bg-yellow-400 rounded-full animate-bounce"></div><div className="w-3 h-3 bg-yellow-400 rounded-full animate-bounce"></div></div>;
+            };
+            const getMouth = () => {
+                if (isFinalStep) return <div className="w-6 h-3.5 bg-rose-400 rounded-b-full mt-1.5"></div>;
+                if (step === 0) return <div className="w-4 h-1.5 bg-cyan-300 rounded-full mt-2"></div>;
+                return <div className="w-3.5 h-3.5 bg-rose-400 rounded-full mt-1 animate-ping"></div>;
+            };
+
+            return (
+                <div className={`relative flex flex-col items-center drop-shadow-lg select-none ${getContainerAnim()}`}>
+                    <div className="relative z-0 flex flex-col items-center translate-y-1">
+                        <div className={`w-3.5 h-3.5 rounded-full shadow-[0_0_10px_currentColor] z-10 transition-colors duration-300 ${isFinalStep ? 'text-emerald-400 bg-emerald-400' : 'text-yellow-400 bg-yellow-400 animate-pulse'}`}></div>
+                        <div className="w-1.5 h-4 bg-slate-300"></div>
+                    </div>
+                    <div className="relative z-10 w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-white to-slate-200 rounded-[1.2rem] border-[3px] border-indigo-400 shadow-xl flex flex-col items-center justify-center p-1.5">
+                        <div className="w-full h-full bg-slate-900 rounded-lg flex flex-col items-center justify-center p-1.5 shadow-inner border-2 border-indigo-500">
+                            {getEyes()} {getMouth()}
+                        </div>
+                    </div>
+                    <div className={`absolute top-1/2 -left-2 w-3 h-5 bg-slate-200 border-[2.5px] border-indigo-400 rounded-full z-0 origin-top ${getArmLAnim()}`}></div>
+                    <div className={`absolute top-1/2 -right-2 w-3 h-5 bg-slate-200 border-[2.5px] border-indigo-400 rounded-full z-0 origin-top ${getArmRAnim()}`}></div>
+                </div>
+            );
+        };
+
+        function App() {
+            const [view, setView] = useState('home');
+            const [exIdx, setExIdx] = useState(0);
+            const [step, setStep] = useState(0);
+            const [isMuted, setIsMuted] = useState(false);
+            const [isFullDemo, setIsFullDemo] = useState(false);
+            const scrollContainerRef = useRef(null);
+
+            const activeExercise = isFullDemo ? FULL_DEMONSTRATION : EXERCISES[exIdx];
+            const maxSteps = activeExercise.steps.length - 1;
+            const currentStepData = activeExercise.steps[step];
+            const EnunciadoText = activeExercise.enunciado;
+
+            const handleInteraction = () => AudioController.init();
+
+            useEffect(() => {
+                if(scrollContainerRef.current) {
+                    scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+                }
+            }, [step, exIdx, view, isFullDemo]);
+
+            const startExercise = (index) => {
+                handleInteraction();
+                AudioController.play('swoosh');
+                setIsFullDemo(false);
+                setExIdx(index);
+                setStep(0);
+                setView('lab');
+            };
+
+            const startFullDemo = () => {
+                handleInteraction();
+                AudioController.play('swoosh');
+                setIsFullDemo(true);
+                setExIdx(0);
+                setStep(0);
+                setView('lab');
+            };
+
+            const nextStep = () => {
+                handleInteraction();
+                if (step < maxSteps) {
+                    const next = step + 1;
+                    setStep(next);
+                    if (next === maxSteps) AudioController.play('success');
+                    else AudioController.play('pop');
+                } else {
+                    if (!isFullDemo && exIdx < EXERCISES.length - 1) {
+                        AudioController.play('swoosh');
+                        setExIdx(exIdx + 1);
+                        setStep(0);
+                    } else {
+                        AudioController.play('swoosh');
+                        setView('home');
+                    }
+                }
+            };
+
+            const prevStep = () => {
+                handleInteraction();
+                if (step > 0) {
+                    setStep(step - 1);
+                    AudioController.play('pop-reverse');
+                }
+            };
+
+            const toggleMute = () => { handleInteraction(); setIsMuted(AudioController.toggleMute()); };
+
+            if (view === 'home') {
+                return (
+                    <div className="w-screen min-h-[100dvh] bg-gradient-to-br from-[#1e3a8a] via-[#4338ca] to-[#be185d] flex flex-col items-center justify-start p-4 sm:p-6 relative font-fun overflow-y-auto overflow-x-hidden scrollbar-hide">
+                        <FloatingBackground />
+                        
+                        <div className="w-[96%] max-w-[1400px] z-20 flex items-center justify-between mb-8 sm:mb-12 mt-2">
+                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl border-2 border-yellow-300 bg-white/15 backdrop-blur-md text-yellow-300 font-black tracking-wider uppercase shadow-md text-sm sm:text-base">
+                                <Rocket className="w-5 h-5 text-yellow-300" /> TuProfe20 Lab
+                            </div>
+                            <button onClick={toggleMute} className="p-2 sm:p-3 rounded-2xl bg-white/20 border-2 border-white/30 backdrop-blur-md text-white hover:bg-white/30 transition-all active:scale-95">
+                                {isMuted ? <VolumeX className="w-5 h-5 sm:w-6 sm:h-6" /> : <Volume2 className="w-5 h-5 sm:w-6 sm:h-6" />}
+                            </button>
+                        </div>
+
+                        <div className="relative z-10 text-center w-[96%] max-w-[1400px] flex flex-col items-center">
+                            <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white mb-3 sm:mb-5 drop-shadow-[0_6px_0_rgba(0,0,0,0.3)] tracking-tight leading-none uppercase">
+                                Deducción de la <span className="text-yellow-300 underline decoration-wavy decoration-cyan-400">Fórmula Cuadrática</span>
+                            </h1>
+                            <p className="text-base sm:text-xl lg:text-2xl text-purple-100 mb-6 sm:mb-8 font-bold max-w-3xl leading-relaxed">
+                                ¡Aprende a completar el cuadrado y deducir la fórmula paso a paso! 🧮🤖
+                            </p>
+
+                            <button 
+                                onClick={startFullDemo}
+                                className="mb-10 group relative inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-900 font-black text-lg sm:text-2xl shadow-[0_10px_25px_rgba(251,191,36,0.5)] border-4 border-white hover:scale-105 active:scale-95 transition-all"
+                            >
+                                <Sparkles className="w-7 h-7 text-slate-900 animate-spin" />
+                                <span>Ver Demostración Completa (10 Pasos)</span>
+                                <ChevronRight className="w-7 h-7 text-slate-900" />
+                            </button>
+
+                            <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6 mb-12">
+                                {EXERCISES.map((ex, idx) => (
+                                    <button
+                                        key={ex.id}
+                                        onClick={() => startExercise(idx)}
+                                        className="group text-left p-4 sm:p-5 rounded-[1.5rem] bg-gradient-to-br bg-opacity-90 backdrop-blur-xl border-[3px] border-white/40 hover:-translate-y-2 hover:shadow-[0_15px_30px_rgba(0,0,0,0.3)] transition-all flex flex-col relative overflow-hidden shadow-lg min-h-[10rem] sm:min-h-[12rem]"
+                                        style={{ backgroundImage: `linear-gradient(to bottom right, var(--tw-gradient-stops))` }}
+                                    >
+                                        <div className={`absolute inset-0 opacity-80 ${ex.cardGradient}`}></div>
+                                        <div className="relative z-10 flex-1 flex flex-col">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <span className={`${ex.badgeColor} text-white text-xs sm:text-sm font-black px-3 py-1 rounded-md uppercase tracking-widest shadow-sm shrink-0`}>
+                                                    {ex.title}
+                                                </span>
+                                                <span className="bg-black/20 text-white text-xs font-bold px-2 py-1 rounded-md">
+                                                    Paso {ex.id}
+                                                </span>
+                                            </div>
+                                            <div className="flex-1 my-2 bg-white/95 rounded-xl p-3 text-slate-900 shadow-inner overflow-hidden flex items-center justify-center border border-white/60 w-full pointer-events-none math-card">
+                                                <MathDisplay latex={ex.steps[0].latex} />
+                                            </div>
+                                            <div className="text-white text-sm sm:text-base font-black text-center mt-2 drop-shadow-md">
+                                                {ex.subtitle}
+                                            </div>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="w-screen h-[100dvh] bg-gradient-to-br from-[#0f172a] via-[#312e81] to-[#831843] text-slate-800 flex flex-col p-2 sm:p-4 relative font-fun overflow-hidden">
+                    <FloatingBackground />
+                    {step === maxSteps && <Confetti />}
+
+                    {/* Navbar InGame */}
+                    <div className="shrink-0 relative z-10 w-[96%] max-w-[1400px] mx-auto flex justify-between items-center mb-3 sm:mb-4 px-1">
+                        <button onClick={() => { AudioController.play('swoosh'); setView('home'); }} className="flex items-center justify-center px-4 py-2 sm:px-5 sm:py-2.5 rounded-[1rem] sm:rounded-[1.2rem] bg-white/10 border-[3px] border-white/30 backdrop-blur-md text-white font-black hover:bg-white/20 transition-all shadow-lg active:scale-95 text-sm sm:text-base hover:scale-105">
+                            <Home className="w-5 h-5 sm:mr-2" />
+                            <span className="hidden sm:inline">Portada</span>
+                        </button>
+
+                        <div className="flex items-center gap-1.5 sm:gap-2 bg-black/30 p-1.5 sm:p-2 rounded-[1rem] sm:rounded-[1.2rem] border-2 border-white/20 backdrop-blur-md shadow-lg overflow-x-auto scrollbar-hide max-w-[50vw]">
+                            {EXERCISES.map((ex, i) => (
+                                <button
+                                    key={ex.id}
+                                    onClick={() => startExercise(i)}
+                                    className={`shrink-0 w-8 h-8 sm:w-11 sm:h-11 rounded-[0.8rem] sm:rounded-[1rem] font-black text-sm sm:text-base transition-all ${!isFullDemo && exIdx === i ? 'bg-yellow-400 text-slate-900 scale-110 shadow-[0_0_15px_rgba(250,204,21,0.6)]' : 'text-white hover:bg-white/20'}`}
+                                >
+                                    {ex.id}
+                                </button>
+                            ))}
+                        </div>
+
+                        <button onClick={toggleMute} className="p-2 sm:p-3 rounded-[1rem] sm:rounded-[1.2rem] bg-white/10 border-[3px] border-white/30 text-white hover:bg-white/20 transition-all shadow-lg active:scale-95 hover:scale-105">
+                            {isMuted ? <VolumeX className="w-5 h-5 sm:w-6 sm:h-6" /> : <Volume2 className="w-5 h-5 sm:w-6 sm:h-6" />}
+                        </button>
+                    </div>
+
+                    <div className="flex-1 min-h-0 relative z-10 w-[96%] max-w-[1400px] mx-auto bg-white rounded-[2rem] sm:rounded-[2.5rem] border-[6px] sm:border-[8px] border-slate-100 shadow-[0_30px_60px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden">
+                        
+                        {/* Enunciado Area */}
+                        <div className="shrink-0 bg-slate-900 border-b-[4px] border-blue-500 px-4 py-3 sm:px-6 flex flex-col justify-center relative shadow-md z-20">
+                            <div className="flex justify-between items-center w-full max-w-5xl mx-auto mb-2">
+                                <span className="bg-yellow-400 text-slate-900 font-black text-xs sm:text-sm px-3 py-1 rounded-md uppercase tracking-widest shadow-sm">
+                                    {activeExercise.title}
+                                </span>
+                                <span className="text-cyan-200 font-bold text-xs sm:text-sm bg-white/10 px-3 py-1 rounded-md">
+                                    {activeExercise.subtitle}
+                                </span>
+                            </div>
+                            <div className="flex flex-col items-center justify-center text-white font-bold text-lg sm:text-xl md:text-2xl text-center w-full max-w-5xl mx-auto leading-relaxed math-enunciado">
+                                <EnunciadoText />
+                            </div>
+                        </div>
+
+                        {/* Desarrollo Contínuo */}
+                        <div className="flex-1 flex flex-col items-center p-4 sm:p-6 relative bg-slate-50 overflow-hidden w-full">
+                            <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(#000_2px,transparent_2px)] [background-size:20px_20px] pointer-events-none"></div>
+
+                            {/* Badge actual arriba flotando */}
+                            <div key={`badge-${exIdx}-${step}-${isFullDemo}`} className="z-20 mb-4 animate-jellyPop text-center shrink-0">
+                                <span className={`inline-flex items-center gap-2 sm:gap-3 px-5 py-2 sm:px-6 sm:py-2.5 rounded-[1rem] font-black text-sm sm:text-lg lg:text-xl shadow-lg border-2 ${step === maxSteps ? 'bg-amber-400 text-slate-900 border-yellow-200' : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-blue-400'}`}>
+                                    <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" /> 
+                                    <span>{currentStepData.propertyText}</span>
+                                </span>
+                            </div>
+
+                            {/* Contenedor escrolleable */}
+                            <div ref={scrollContainerRef} className="w-full flex-1 flex flex-col items-center justify-start z-10 px-2 space-y-4 sm:space-y-6 overflow-y-auto scrollbar-hide pb-4">
+                                {activeExercise.steps.slice(0, step + 1).map((s, idx) => (
+                                    <div key={`${exIdx}-${idx}-${isFullDemo}`} className={`transition-all duration-300 w-full max-w-3xl flex flex-col items-center ${idx === step ? 'opacity-100 scale-100 animate-slideInRight' : 'opacity-60 scale-95'}`}>
+                                        
+                                        <div className={`px-4 py-3 sm:px-8 sm:py-4 w-fit max-w-full text-center rounded-[1.5rem] sm:rounded-[2rem] flex items-center justify-center min-h-[4rem] sm:min-h-[5rem] overflow-x-auto scrollbar-hide ${
+                                            idx === step 
+                                            ? (step === maxSteps ? 'bg-[#fde047] border-[4px] sm:border-[6px] border-[#eab308] shadow-[0_15px_30px_rgba(234,179,8,0.5)] math-current' : 'bg-white border-[4px] sm:border-[6px] border-blue-400 shadow-[0_10px_25px_rgba(59,130,246,0.3)] math-current') 
+                                            : 'bg-white/70 border-[2px] sm:border-[3px] border-slate-200 math-history'
+                                        }`}>
+                                            <MathDisplay latex={s.latex} />
+                                        </div>
+                                        
+                                        {/* Gráfico Opcional si existe en el paso */}
+                                        {s.graphic && (
+                                            <div className={`mt-4 w-full bg-white rounded-2xl border-2 border-slate-200 p-4 shadow-sm ${idx === step ? 'border-blue-300' : ''}`}>
+                                                {s.graphic}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Zona Inferior: Robot y Feedback */}
+                        <div className="shrink-0 bg-white w-full px-4 py-2 sm:px-8 sm:py-3 flex items-center gap-4 sm:gap-6 border-t-[4px] border-slate-100 z-20 relative shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
+                            <div className="shrink-0 absolute -top-12 sm:relative sm:-top-0 left-4 sm:left-0 drop-shadow-xl">
+                                <RobotAssistant step={step} maxSteps={maxSteps} />
+                            </div>
+                            <div className="flex-1 text-sm sm:text-base md:text-lg font-bold text-slate-700 leading-snug sm:leading-relaxed bg-blue-50/80 p-3 sm:p-4 rounded-[1rem] border-2 border-blue-100 min-h-[4rem] flex items-center shadow-sm ml-[4.5rem] sm:ml-0">
+                                <div key={`speech-${exIdx}-${step}-${isFullDemo}`} className="animate-slideInRight w-full">
+                                    {currentStepData.robotSpeech}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Controles Nav */}
+                        <div className="shrink-0 bg-gradient-to-b from-[#e0e7ff] to-[#c7d2fe] p-2 sm:p-3 w-full flex flex-col items-center border-t-[4px] border-white z-20">
+                            <div className="flex justify-center items-stretch w-full max-w-4xl gap-2 sm:gap-4 h-10 sm:h-12">
+                                <button
+                                    onClick={prevStep}
+                                    disabled={step === 0}
+                                    className="flex-[0.8] bg-[#a5b4fc] border-b-[4px] border-[#6366f1] text-[#312e81] rounded-l-xl font-black text-sm sm:text-lg flex items-center justify-center gap-1 active:border-b-0 active:translate-y-[4px] disabled:opacity-40 transition-all hover:bg-[#c7d2fe]"
+                                >
+                                    <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 stroke-[3px]" />
+                                    <span className="hidden sm:inline">Atrás</span>
+                                </button>
+
+                                <div className="bg-[#6366f1] text-white font-black px-3 sm:px-6 text-sm sm:text-xl flex items-center justify-center border-b-[4px] border-[#4338ca] shadow-inner whitespace-nowrap min-w-[4rem]">
+                                    Paso {step + 1}/{maxSteps + 1}
+                                </div>
+
+                                <button
+                                    onClick={nextStep}
+                                    className={`flex-[2] border-b-[4px] text-white rounded-r-xl font-black text-sm sm:text-xl flex items-center justify-center gap-2 active:border-b-0 active:translate-y-[4px] transition-all shadow-sm hover:brightness-110 ${
+                                        step === maxSteps
+                                            ? 'bg-gradient-to-r from-[#10b981] to-[#047857] border-[#065f46] animate-pulse'
+                                            : 'bg-gradient-to-r from-[#3b82f6] to-[#2563eb] border-[#1d4ed8]'
+                                    }`}
+                                >
+                                    <span>
+                                        {step < maxSteps
+                                            ? '¡Siguiente Paso!'
+                                            : (!isFullDemo && exIdx < EXERCISES.length - 1)
+                                            ? `Siguiente Reto`
+                                            : '¡Volver!'}
+                                    </span>
+                                    <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 stroke-[3px]" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
